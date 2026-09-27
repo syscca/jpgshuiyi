@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>批量水印工具 · Batch Watermark</title>
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M12 2l8 4v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M8.5 12.5l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>批量水印工具</span>
+  </div>
+  <div class="top-actions">
+    <button id="btnImport" class="btn">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 4v11m0-11l-4 4m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      导入图片
+    </button>
+    <button id="btnLogo" class="btn">
+      <svg viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="10" r="1.6" fill="currentColor"/><path d="M4 17l5-4 4 3 3-2 4 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      添加 Logo
+    </button>
+    <button id="btnUndo" class="btn icon-only" title="撤销 Ctrl+Z">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 6L4 11l5 5M4 11h10a6 6 0 016 6v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btnRedo" class="btn icon-only" title="重做 Ctrl+Y">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 6l5 5-5 5M20 11H10a6 6 0 00-6 6v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btnExportTop" class="btn primary">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 15V4m0 0L8 8m4-4l4 4M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      导出全部
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- 左：图片列表 -->
+  <aside class="sidebar-left">
+    <div class="sidebar-head">
+      <span>图片列表</span>
+      <span id="imgCount" class="badge">0</span>
+    </div>
+    <div id="thumbList" class="thumb-list">
+      <div class="thumb-empty" id="thumbEmpty">
+        <svg viewBox="0 0 24 24" width="34" height="34"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor"/><path d="M4 17l5-4 4 3 3-2 4 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <p>拖入图片或点击「导入图片」</p>
+        <p class="sub">支持 JPG / PNG / WebP / BMP / GIF</p>
+      </div>
+    </div>
+    <div class="sidebar-foot">水印拖到边角会自动贴角固定，在所有图片上保持相同边距；字号/Logo 大小按画面比例自适应</div>
+  </aside>
+
+  <!-- 中：画布 -->
+  <section class="canvas-area">
+    <div class="canvas-toolbar">
+      <div class="tool-group" id="toolGroup">
+        <button class="tool active" data-tool="select" title="选择/移动 (V)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path d="5 3l14 8-6 1.5L9.5 19 5 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="tool" data-tool="text" title="文字 (T)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 6h14M12 6v13M9 19h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tool" data-tool="line" title="直线 (L)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 19L19 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="tool" data-tool="arrow" title="箭头 (A)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path d="M5 19L19 5M19 5h-7M19 5v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="tool" data-tool="rect" title="矩形 (R)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><rect x="4" y="6" width="16" height="12" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+        <button class="tool" data-tool="ellipse" title="椭圆 (E)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><ellipse cx="12" cy="12" rx="8" ry="6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+        <button class="tool" data-tool="doodle" title="涂鸦画笔 (D)">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 17c3-1 5-6 7-8s5-4 7-2-2 5-4 7-6 4-9 4l-1-1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="tool-group">
+        <label class="inline-label" title="画笔/文字颜色">
+          <input type="color" id="drawColor" value="#e61610">
+        </label>
+        <label class="range-inline" title="画笔粗细（按画面比例，横竖图视觉一致）">
+          <span>粗细</span>
+          <input type="range" id="drawWidth" min="0.0005" max="0.03" step="0.0005" value="0.005">
+          <em id="drawWidthVal">0.50%</em>
+        </label>
+      </div>
+
+      <div class="tool-spacer"></div>
+
+      <div class="tool-group">
+        <button class="btn small" id="btnRotateL" title="当前图片逆时针旋转 90°">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M7 7V4M7 7h3M7 7a8 8 0 105-7.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          旋转
+        </button>
+        <button class="btn small" id="btnRotateR" title="当前图片顺时针旋转 90°">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M17 7V4m0 3h-3m3 0a8 8 0 11-5-7.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          旋转
+        </button>
+      </div>
+
+      <div class="tool-group">
+        <button class="btn icon-only small" id="btnZoomOut" title="缩小">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 8v6M20 20l-4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <span id="zoomLabel" class="zoom-label">100%</span>
+        <button class="btn icon-only small" id="btnZoomIn" title="放大">
+          <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 8v6M8 11h6M20 20l-4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn small" id="btnZoomFit" title="适应窗口">适应</button>
+      </div>
+    </div>
+
+    <div id="stage" class="stage">
+      <canvas id="canvas"></canvas>
+      <div id="emptyState" class="empty-state">
+        <svg viewBox="0 0 24 24" width="56" height="56"><path d="M12 16V5m0 0L8.5 8.5M12 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="14" width="16" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        <h2>拖入图片开始制作水印</h2>
+        <p>支持批量拖入多种格式 / 不同分辨率的图片，也可 Ctrl+V 粘贴图片</p>
+        <button class="btn primary" id="emptyImport">选择图片</button>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span id="statusName" class="status-name">未载入图片</span>
+      <span id="statusSize"></span>
+      <span id="statusRot"></span>
+      <span class="status-flex"></span>
+      <span class="status-hint">提示：选中图层后可拖移、拉控制点缩放、顶部圆点旋转；Delete 删除图层</span>
+    </div>
+  </section>
+
+  <!-- 右：图层 / 属性 / 导出 -->
+  <aside class="sidebar-right">
+    <div class="rp-block">
+      <div class="sidebar-head"><span>图层</span>
+        <span class="head-actions">
+          <button class="mini" id="btnLayerUp" title="上移图层">▲</button>
+          <button class="mini" id="btnLayerDown" title="下移图层">▼</button>
+          <button class="mini danger" id="btnLayerDel" title="删除图层">✕</button>
+        </span>
+      </div>
+      <div id="layerList" class="layer-list">
+        <p class="muted tiny">水印 / 文字 / 标注都在此统一管理</p>
+      </div>
+    </div>
+
+    <div class="rp-block" id="propBlock">
+      <div class="sidebar-head"><span>属性</span></div>
+      <div id="propPanel" class="prop-panel">
+        <p class="muted tiny">在画布上选中一个图层后，可在此调整详细参数；点击「文字」工具可添加文字水印。</p>
+      </div>
+    </div>
+
+    <div class="rp-block">
+      <div class="sidebar-head"><span>位置预设</span></div>
+      <div class="pos-grid" id="posGrid">
+        <button data-pos="tl" title="左上"></button><button data-pos="tc" title="上中"></button><button data-pos="tr" title="右上"></button>
+        <button data-pos="ml" title="左中"></button><button data-pos="mc" title="居中"></button><button data-pos="mr" title="右中"></button>
+        <button data-pos="bl" title="左下"></button><button data-pos="bc" title="下中"></button><button data-pos="br" title="右下"></button>
+      </div>
+    </div>
+
+    <div class="rp-block rp-export">
+      <div class="sidebar-head"><span>导出设置</span></div>
+      <div class="prop-panel">
+        <label class="field">
+          <span>输出格式</span>
+          <select id="outFormat">
+            <option value="original">保持原格式</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/png">PNG（支持透明）</option>
+            <option value="image/webp">WebP</option>
+          </select>
+        </label>
+        <label class="field" id="qualityField">
+          <span>图片质量 <em id="qualityVal">92%</em></span>
+          <input type="range" id="outQuality" min="0.3" max="1" step="0.01" value="0.92">
+        </label>
+        <label class="field">
+          <span>文件名后缀</span>
+          <input type="text" id="outSuffix" value="_wm">
+        </label>
+        <div class="field-row">
+          <button class="btn small grow" id="btnPickDir">选择输出文件夹</button>
+          <button class="btn small ghost" id="btnClearDir" title="改用 ZIP 打包下载">清除</button>
+        </div>
+        <p class="muted tiny" id="outDirHint">未选择文件夹时，将自动打包为 ZIP 下载到本地。</p>
+        <button class="btn primary grow block" id="btnExport">导出全部水印图片</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<input type="file" id="fileInput" accept="image/*" multiple hidden>
+<input type="file" id="logoInput" accept="image/*" hidden>
+
+<div id="dropMask" class="drop-mask hidden">
+  <div class="drop-box">
+    <svg viewBox="0 0 24 24" width="60" height="60"><path d="M12 16V5m0 0L8.5 8.5M12 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="14" width="16" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    <p>松开鼠标导入图片</p>
+  </div>
+</div>
+
+<div id="modalMask" class="modal-mask hidden">
+  <div class="modal">
+    <h3 id="modalTitle">正在导出</h3>
+    <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+    <p id="modalText" class="modal-text">准备中…</p>
+    <div class="modal-actions">
+      <button class="btn" id="btnCancelExport">取消</button>
+      <button class="btn primary hidden" id="btnModalClose">完成</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/zip.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>
